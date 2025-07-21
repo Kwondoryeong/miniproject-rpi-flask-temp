@@ -1,0 +1,3 @@
+# 온/습도 기준치 및 설정
+TEMP_THRESHOLD = 30.0
+HUMID_THRESHOLD = 70.0

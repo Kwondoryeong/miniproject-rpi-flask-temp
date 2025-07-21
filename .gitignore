@@ -1,3 +1,40 @@
+# -------------------------------
+# 📦 Python / Flask / Raspberry Pi
+# -------------------------------
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Flask environment
+.env
+instance/
+
+# Raspberry Pi - swap or temporary
+*.swp
+*.log
+
+# Virtual environment
+venv/
+.env/
+
+# MySQL / SQLite dumps
+*.sql
+*.db
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# macOS system files
+.DS_Store
+
+# Backup files
+*~
+*.bak
+# -------------------------------
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
