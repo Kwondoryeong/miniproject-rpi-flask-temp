@@ -30,25 +30,14 @@ Raspberry Pi와 Flask를 기반으로 한 **서버실 온습도 실시간 감시
 ## 📁 디렉토리 구조
 ```
 project/
-├── app.py               # Flask 서버
-├── sensor_collector.py  # 센서 수집 및 GPIO 제어
-├── config.py            # 기준 온도/습도 설정
-├── database.py          # DB 연결 유틸
-├── templates/index.html # 대시보드
-├── static/js/main.js    # 비동기 fetch
-└── README.md
+├── sensor_collector.py     # 센서 데이터 수집 + GPIO 제어
+├── app.py                  # Flask 웹 서버 + API + 이메일 전송
+├── config.py               # 임계값, SMTP, DB 설정
+├── database.py             # MySQL 연결 및 쿼리 함수
+├── send_email_alert.py     # 이메일 전송 함수
+├── templates/index.html    # 대시보드 페이지
+├── static/js/main.js       # 비동기 JS
 
-project/
-│
-├── sensor_collector.py    # 센서 수집 및 GPIO 제어
-├── app.py                 # Flask 서버
-├── templates/
-│   └── index.html         # 대시보드
-├── static/
-│   └── js/
-│       └── main.js        # 비동기 JS (fetch 사용)
-├── config.py              # 온/습도 기준치 및 설정
-└── database.py            # DB 연결 유틸
 ```
 
 ## ⚙️ 실행 방법
@@ -154,3 +143,111 @@ JavaScript (fetch), HTML/CSS
 멀티 센서 / 구역 모니터링 (MQTT)
 
 사용자 로그인 및 권한 관리
+
+## 2일차
+### DB 테이블 생성
+- MariaDB 연결 시 비밀번호 오류 발생
+  - mysqld_safe를 동시에 두 번 실행해버렸음(MariaDB 서버 충돌 나고 소켓 파일도 꼬임)
+
+1. MariaDB 관련 프로세스 완전 종료
+```bash
+sudo pkill -9 mysqld
+sudo pkill -9 mariadbd
+
+# 프로세스 확인
+ps aux | grep mysqld
+# "grep --color=auto mysqld" 한 줄만 남으면 성공
+```
+
+2. 필요한 디렉토리 소유권 복구
+```bash
+sudo chown -R mysql:mysql /var/lib/mysql
+sudo chown -R mysql:mysql /run/mysqld
+```
+
+3. 안전모드 실행(비밀번호 초기화용, 한 번만 실행)
+```bash
+sudo mysqld_safe --skip-grant-tables --skip-networking &
+```
+
+4. 다른 터미널 or 탭에서 mysql 접속 시도
+```bash
+sudo mysql -u root
+```
+
+5. 비밀번호 초기화
+```bash
+USE mysql;
+
+# 암호 재설정
+UPDATE mysql.global_priv 
+SET priv = JSON_SET(priv, '$.authentication_string', PASSWORD('12345')) 
+WHERE User = 'root';
+
+FLUSH PRIVILEGES;
+```
+
+6. mysqld_safe 종료 및 서비스 재시작
+```bash
+
+sudo pkill -f mysqld
+sudo systemctl start 
+```
+
+2. MariaDB 서버 정상 시작
+```bash
+ps aux | grep mysqld
+```
+
+3. root 계정으로 정상 접속 테스트
+```bash
+mysql -u root -p
+# 암호입력
+```
+
+mysql 접속 후
+```bash
+CREATE DATABASE sensordata;
+USE sensordata;
+
+CREATE TABLE sensor_data (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    temperature FLOAT,
+    humidity FLOAT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    led_state BOOLEAN DEFAULT FALSE,
+    buzzer_state BOOLEAN DEFAULT FALSE
+);
+```
+- Flask 서버
+- JavaScript의 fetch() 함수와 setInterval()을 이용한 비동기 주기 폴링 방식
+- 브라우저를 새로고침하지 않아도, 백엔드 API(/api/data)에서 데이터를 n초마다 자동으로 가져와 화면에 갱신하는 방식
+
+```html
+fetchData();                  // 페이지 처음 로딩 시 1회 실행
+setInterval(fetchData, 5000); // 이후 5초마다 fetchData 반복 호출 (비동기 폴링)
+```
+
+### SMTP 메일 발송
+- Gmail은 일반 계정 비밀번호로 SMTP 접속 막아둠 > 앱 비밀번호 발급 필요
+  - https://myaccount.google.com/apppasswords
+  - 16자리 코드 PASSWORD에 입력
+
+### 개선점
+1. 그래프 시각화
+- Chart.js를 사용하여 온도/습도 데이터를 실시간 선 그래프로 표시
+- 1초마다 /api/data 호출하여 새 데이터 반영
+
+2. 부트스트랩 아이콘 추가
+- 상단 제목 옆에 thermometer-half, droplet, clock 등의 아이콘 추가
+- Bootstrap 5의 bootstrap-icons CDN 포함
+
+3. 임계값 초과 시 강조 색상
+- 온도 28도 초과 → 빨간색 (text-danger)
+- 습도 60% 초과 → 파란색 강조 (text-primary fw-bold)
+- 조건에 따라 CSS 클래스를 동적으로 변경
+
+4. 메일 발송시 앱 멈춤 여부
+- 메일 발송은 기본적으로 동기(synchronous) 처리되며, SMTP 응답이 느리면 전체 코드 흐름이 잠시 멈춤
+- 해결 방법
+  - 스레드(Thread)로 처리
