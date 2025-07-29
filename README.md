@@ -2,32 +2,145 @@
 
 Raspberry Pi와 Flask를 기반으로 한 **서버실 온습도 실시간 감시 시스템**입니다.
 
+
 ## 개요
 - 서버실 내부의 온도 및 습도를 실시간으로 모니터링
 - 기준치를 벗어날 경우 LED 점등 및 부저 경고
 - Flask 기반 웹 대시보드 제공
 
-## 📌 주요 기능
+## 주요 기능
 
 - DHT11 센서로 온도/습도 측정 및 상태 판단 (6초 주기)
 - 기준치 이상 시 LED(정상: 녹색, 이상: 빨간색) 색상 변경 및 부저 경고
 - Flask 웹 대시보드에서 실시간 상태 확인 (비동기 fetch)
 - MySQL DB에 모든 데이터 저장
 
-## 🖼️ 시스템 구조
+## Raspberry Pi OS 설치 및 무선 설정 가이드 (Windows 기준)
+
+### 1. Raspberry Pi Imager 다운로드 및 실행
+
+- Raspberry Pi 공식 사이트 접속  
+    - [https://www.raspberrypi.com/software/](https://www.raspberrypi.com/software/)
+
+- **"Download for Windows"** 버튼 클릭하여 `.exe` 파일 다운로드
+
+    <img src="./img/raspi001.png" width="600">
+
+- 다운로드 완료 후 `.exe` 파일 실행
+
+### 2. 설치 및 설정
+1. **장치 선택**  
+    - 사용하는 Raspberry Pi 모델 선택
+2. **OS 선택**  
+    - 원하는 Raspberry Pi OS 선택
+3. **저장 장치 선택**  
+    - 마이크로 SD 카드 선택
+
+        <img src="./img/raspi002.png" width="600">
+
+4. **설정 편집**
+    - 라즈베리파이 디바이스, 운영체제, 저장소 설정 후 다음 클릭
+
+    - OS 커스터마이징 설정을 적용
+        - 설정을 편집하기 클릭
+
+            <img src="./img/raspi003.png" width="600">
+
+        - **Hostname**: 라즈베리파이의 네트워크 이름 지정  
+        - **사용자 이름 및 비밀번호**: SSH 접속용 계정 설정  
+
+        - **무선 네트워크 설정**
+            - SSID : Wi-Fi 이름 입력 (공유기의 네트워크 이름 확인 후 입력)  
+            - Password: Wi-Fi 비밀번호 입력  
+            - 무선 LAN 국가 : `KR` (대한민국)
+
+        - **로케일 설정**
+            - 키보드 레이아웃: `kr`  
+            - 언어/지역 설정: 한국어로 지정
+
+        - **서비스**
+            - SSH 활성화 체크 (원격 접속용)
+
+5. 설정 후 ->  **저장** 클릭  -> 설치 진행
+
+
+### 3. 공유기에서 Wi-Fi 정보 확인
+
+- 웹 브라우저에서 `와이파이 IP` 접속
+- 로그인 후 **[관리도구] → [무선랜 관리] → [Wi-Fi 기본설정]** 메뉴 이동
+- **네트워크 이름 (SSID)** 및 **비밀번호** 확인
+
+
+### 4. 소프트웨어 추가 다운로드
+
+#### VNC Viewer 다운로드 (원격 데스크탑 연결용)
+
+- VNC Viewer 공식 다운로드 페이지
+    - [https://www.realvnc.com/en/connect/download/viewer/](https://www.realvnc.com/en/connect/download/viewer/)
+
+- 사용 중인 OS(예: Windows)에 맞는 설치 파일 다운로드
+
+#### SD Card Formatter 다운로드 (SD 카드 초기화용)
+
+- SD 카드 포맷 공식 유틸리티
+    - [https://www.sdcard.org/downloads/formatter/](https://www.sdcard.org/downloads/formatter/)
+- Windows 또는 macOS용 다운로드 및 설치
+- 마이크로 SD 카드 삽입 후 포맷 진행 (옵션: Quick Format 추천)
+
+### 5. Raspberry Pi VNC 원격 접속 설정
+
+#### SSH 접속 (PuTTY 사용)
+
+1. **PuTTY 실행**  
+2. Host Name에 **라즈베리파이 IP 주소 입력**  
+    - 예: `192.168.0.xxx`
+3. Port는 기본값 `22`, 연결 타입 `SSH`로 설정 후 `Open` 클릭  
+4. 로그인 화면에서 다음 입력:
+   - ID: `pi`  
+   - Password: (설치 시 설정한 비밀번호)
+
+#### VNC 기능 활성화
+
+- SSH 접속 완료 후 명령어 입력
+
+    ```bash
+    sudo raspi-config
+    ```
+
+1. Interface Options 선택
+
+    <img src="./img/raspi004.png" width="600">
+
+2. VNC 선택
+
+    <img src="./img/raspi005.png" width="600">
+
+3. Would you like the VNC Server to be enabled?
+    - Yes 클릭 후 Finish 후 종료
+    
+4. 라즈베리파이 재시작
+
+    ```bash
+    sudo reboot 
+    ```
+
+####  VNC Viewer로 원격 접속
+- VNC Viewer 실행 -> 주소창에 라즈베리파이 IP 주소 입력 -> 사용자 이름과 비밀번호 입력
+
+## 시스템 구조
 - 센서 → Raspberry Pi → DB 저장 → Flask → 웹 대시보드
             ↘ LED/Buzzer  
 ![시스템 다이어그램](./img/system-diagram2.png)
 
 
-## 🧱 기술 스택
+## 기술 스택
 
 - Python 3.11.9 + Flask
 - RPi.GPIO
 - MySQL
 - HTML/CSS + JavaScript (Fetch API)
 
-## 📁 디렉토리 구조
+## 디렉토리 구조
 ```
 project/
 ├── sensor_collector.py     # 센서 데이터 수집 + GPIO 제어
@@ -40,7 +153,7 @@ project/
 
 ```
 
-## ⚙️ 실행 방법
+## 실행 방법
 
 1. 환경 설정
 ```bash
@@ -69,82 +182,6 @@ python3 app.py
 python3 sensor_collector.py
 ```
 
-📊 미리보기
-대시보드에서 현재 온도/습도 및 상태를 실시간 표시합니다.
-
-
-
-1. 기능별 마일스톤
-단계	기능	설명
-1단계		환경 구성	Raspberry Pi 설정, Python 패키지 설치 (Flask, GPIO, pymysql 등)
-2단계		센서 데이터 수집	DHT 센서값 주기적 수집, 기준치 이상이면 LED/Buzzer 제어
-3단계	DB 연동	MySQL DB에 6초마다 온습도 값 및 상태 저장
-4단계	웹 대시보드 기본	Flask 웹 서버 구축, HTML+JS로 실시간 데이터 표시
-5단계	비동기 갱신	JavaScript fetch로 최신 온습도 상태 6초마다 업데이트
-6단계	상태 색상 표시	정상: 초록 / 이상: 빨강 LED & 웹에서 시각적으로 표시
-7단계	그래프 추가 (선택)	Chart.js 등을 활용해 과거 데이터 시각화
-8단계	알림 기능 (선택)	이상 상태 시 이메일/텔레그램 알림 연동
-9단계	최종 점검 및 배포	UI 정리, README 작성, github 
-
-2. UI 설계 예시 (HTML 대시보드)
-```pgsql
-코드 복사
-+----------------------------------------------------+
-|           서버실 온습도 상태 모니터링              |
-+----------------------------------------------------+
-| 온도:   24.3°C           |   습도:  48.2%           |
-| 상태:  ✅ 정상 (녹색)    |   측정 시간: 12:45:06    |
-+----------------------------------------------------+
-| [경고 LED] ●           [부저] OFF                  |
-+----------------------------------------------------+
-| [온도/습도 추이 그래프 영역]                       |
-|  (Chart.js로 1시간 단위 표시)                      |
-+----------------------------------------------------+
-```
-UI는 Bootstrap + JS 조합
-
-측정값은 6초마다 fetch로 갱신
-
-상태에 따라 배경/아이콘/글씨 색 변화
-
-✅ 개요
-서버실 내부의 온도 및 습도를 실시간으로 모니터링
-
-기준치를 벗어날 경우 LED 점등 및 부저 경고
-
-Flask 기반 웹 대시보드 제공
-
-✅ 시스템 구성도
-DHT11 → Raspberry Pi (GPIO) → DB 저장 → Flask 서버 → 웹 표시
-
-✅ 주요 기능
-6초 주기 센서 측정 및 상태 판단
-
-LED (정상: 녹색, 이상: 빨간색), 부저 제어
-
-MySQL DB에 로그 저장
-
-웹 대시보드에서 실시간 확인 (비동기 fetch)
-
-✅ 개발환경
-Raspberry Pi 5
-
-Python 3.x
-
-Flask, RPi.GPIO
-
-MySQL 8.x
-
-JavaScript (fetch), HTML/CSS
-
-✅ 개선 및 확장 가능성
-상태 알림 (이메일, 텔레그램)
-
-멀티 센서 / 구역 모니터링 (MQTT)
-
-사용자 로그인 및 권한 관리
-
-## 2일차
 ### DB 테이블 생성
 - MariaDB 연결 시 비밀번호 오류 발생
   - mysqld_safe를 동시에 두 번 실행해버렸음(MariaDB 서버 충돌 나고 소켓 파일도 꼬임)
@@ -251,3 +288,4 @@ setInterval(fetchData, 5000); // 이후 5초마다 fetchData 반복 호출 (비�
 - 메일 발송은 기본적으로 동기(synchronous) 처리되며, SMTP 응답이 느리면 전체 코드 흐름이 잠시 멈춤
 - 해결 방법
   - 스레드(Thread)로 처리
+
