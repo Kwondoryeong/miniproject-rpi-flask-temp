@@ -15,6 +15,31 @@ Raspberry Pi와 Flask를 기반으로 한 **서버실 온습도 실시간 감시
 - Flask 웹 대시보드에서 실시간 상태 확인 (비동기 fetch)
 - MySQL DB에 모든 데이터 저장
 
+## 시스템 구조
+- 센서 → Raspberry Pi → DB 저장 → Flask → 웹 대시보드
+            ↘ LED/Buzzer  
+![시스템 다이어그램](./img/system-diagram2.png)
+
+## 기술 스택
+
+- Python 3.11.9 + Flask
+- RPi.GPIO
+- MySQL
+- HTML/CSS + JavaScript (Fetch API)
+
+## 디렉토리 구조
+```
+project/
+├── sensor_collector.py     # 센서 데이터 수집 + GPIO 제어
+├── app.py                  # Flask 웹 서버 + API + 이메일 전송
+├── config.py               # 임계값, SMTP, DB 설정
+├── database.py             # MySQL 연결 및 쿼리 함수
+├── send_email_alert.py     # 이메일 전송 함수
+├── templates/index.html    # 대시보드 페이지
+├── static/js/main.js       # 비동기 JS
+
+```
+
 ## Raspberry Pi OS 설치 및 무선 설정 가이드 (Windows 기준)
 
 ### 1. Raspberry Pi Imager 다운로드 및 실행
@@ -126,32 +151,6 @@ Raspberry Pi와 Flask를 기반으로 한 **서버실 온습도 실시간 감시
 
 ####  VNC Viewer로 원격 접속
 - VNC Viewer 실행 -> 주소창에 라즈베리파이 IP 주소 입력 -> 사용자 이름과 비밀번호 입력
-
-## 시스템 구조
-- 센서 → Raspberry Pi → DB 저장 → Flask → 웹 대시보드
-            ↘ LED/Buzzer  
-![시스템 다이어그램](./img/system-diagram2.png)
-
-
-## 기술 스택
-
-- Python 3.11.9 + Flask
-- RPi.GPIO
-- MySQL
-- HTML/CSS + JavaScript (Fetch API)
-
-## 디렉토리 구조
-```
-project/
-├── sensor_collector.py     # 센서 데이터 수집 + GPIO 제어
-├── app.py                  # Flask 웹 서버 + API + 이메일 전송
-├── config.py               # 임계값, SMTP, DB 설정
-├── database.py             # MySQL 연결 및 쿼리 함수
-├── send_email_alert.py     # 이메일 전송 함수
-├── templates/index.html    # 대시보드 페이지
-├── static/js/main.js       # 비동기 JS
-
-```
 
 ## 실행 방법
 
@@ -270,7 +269,7 @@ setInterval(fetchData, 5000); // 이후 5초마다 fetchData 반복 호출 (비�
   - https://myaccount.google.com/apppasswords
   - 16자리 코드 PASSWORD에 입력
 
-### 개선점
+### 개선 할 점
 1. 그래프 시각화
 - Chart.js를 사용하여 온도/습도 데이터를 실시간 선 그래프로 표시
 - 1초마다 /api/data 호출하여 새 데이터 반영
@@ -284,8 +283,12 @@ setInterval(fetchData, 5000); // 이후 5초마다 fetchData 반복 호출 (비�
 - 습도 60% 초과 → 파란색 강조 (text-primary fw-bold)
 - 조건에 따라 CSS 클래스를 동적으로 변경
 
-4. 메일 발송시 앱 멈춤 여부
+4. 메일 발송시 앱 멈춤 여부(완료)
 - 메일 발송은 기본적으로 동기(synchronous) 처리되며, SMTP 응답이 느리면 전체 코드 흐름이 잠시 멈춤
 - 해결 방법
   - 스레드(Thread)로 처리
+
+[모니터링 영상]
+
+https://github.com/user-attachments/assets/4f67997b-45de-4b5f-9490-761398f75e47
 
